@@ -9,12 +9,10 @@
   html,body{height:100%;margin:0;background:var(--bg);font-family:Inter,Arial,Helvetica,sans-serif;}
   .wrap{height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;position:relative;}
   canvas{display:block}
-  #panel{position:absolute;bottom:0;width:100%;background:var(--panel);padding:18px 12px;box-shadow:0 -6px 20px rgba(212,175,55,0.12);text-align:center}
+  #panel{position:absolute;bottom:0;width:100%;background:var(--panel);padding:18px 12px;
+    box-shadow:0 -6px 20px rgba(212,175,55,0.12);text-align:center}
   button{background:var(--gold);padding:14px 36px;border:none;border-radius:10px;font-size:18px;font-weight:700;cursor:pointer;color:#000}
   #resultado{margin-top:10px;color:#FFD700;font-weight:700;font-size:20px}
-  @media (max-width:520px){
-    canvas{width:360px;height:360px}
-  }
 </style>
 </head>
 <body>
@@ -83,7 +81,7 @@ window.addEventListener('resize', resizeCanvas);
 
 /* ------------------ LOGO CIRCULAR ------------------ */
 const logo = new Image();
-logo.src = "logo.jpg"; // DEBE estar en la misma carpeta
+logo.src = "logo.jpg";
 
 function drawLogo(){
   if(!logo.complete){
@@ -91,23 +89,19 @@ function drawLogo(){
     return;
   }
 
-  const size = radius * 0.8;
+  const size = radius * 0.65;
   const half = size / 2;
 
   ctx.save();
-
-  // máscara circular
   ctx.beginPath();
   ctx.arc(center.x, center.y, half, 0, Math.PI*2);
   ctx.closePath();
   ctx.clip();
 
-  // dibujar el logo centrado
   ctx.drawImage(logo, center.x - half, center.y - half, size, size);
 
   ctx.restore();
 
-  // borde dorado
   ctx.beginPath();
   ctx.arc(center.x, center.y, half, 0, Math.PI*2);
   ctx.lineWidth = 4;
@@ -133,49 +127,56 @@ function drawWheel(rot){
     ctx.fill();
   }
 
-  // texto
-  ctx.fillStyle = "#000";
-  ctx.font = "bold 14px Arial";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
+  /* ------------------ TEXTO RESPONSIVE ------------------ */
+  for (let i = 0; i < premios.length; i++) {
 
-  for(let i=0;i<n;i++){
-    const ang = i*anglePer + anglePer/2 + rot;
-    const tx = center.x + Math.cos(ang)*(radius*0.62);
-    const ty = center.y + Math.sin(ang)*(radius*0.62);
+    const ang = i * anglePer + anglePer/2 + rot;
 
-    let textAngle = ang + Math.PI/2;
-    const deg = (textAngle % (2*Math.PI));
-    if(deg > Math.PI/2 && deg < 3*Math.PI/2) textAngle += Math.PI;
+    const tx = center.x + Math.cos(ang) * (radius * 0.55);
+    const ty = center.y + Math.sin(ang) * (radius * 0.55);
+
+    const dynamicFont = Math.max(10, radius * 0.05); 
+    ctx.font = `bold ${dynamicFont}px Arial`;
+    ctx.fillStyle = "#000";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
 
     const words = premios[i].split(" ");
-    let lines = [];
-    if(words.length<=2) lines.push(premios[i]);
-    else{
-      const half = Math.ceil(words.length/2);
-      lines = [
-        words.slice(0,half).join(" "),
-        words.slice(half).join(" ")
-      ];
+    let line1 = "";
+    let line2 = "";
+
+    for (let w of words) {
+      if (ctx.measureText(line1 + " " + w).width < radius * 0.55) {
+        line1 += (line1 === "" ? "" : " ") + w;
+      } else {
+        line2 += (line2 === "" ? "" : " ") + w;
+      }
     }
 
     ctx.save();
-    ctx.translate(tx,ty);
+    ctx.translate(tx, ty);
+
+    let textAngle = ang + Math.PI/2;
+    const deg = textAngle % (2*Math.PI);
+    if (deg > Math.PI/2 && deg < 3*Math.PI/2) textAngle += Math.PI;
+
     ctx.rotate(textAngle);
-    for(let j=0;j<lines.length;j++){
-      ctx.fillText(lines[j],0,(j-(lines.length-1)/2)*16);
+
+    if (line2 === "") {
+      ctx.fillText(line1, 0, 0);
+    } else {
+      ctx.fillText(line1, 0, -dynamicFont * 0.6);
+      ctx.fillText(line2, 0, dynamicFont * 0.6);
     }
     ctx.restore();
   }
 
-  // borde externo
   ctx.beginPath();
   ctx.arc(center.x, center.y, radius, 0, Math.PI*2);
   ctx.lineWidth = 4;
   ctx.strokeStyle = "#d4af37";
   ctx.stroke();
 
-  // flecha fija
   ctx.fillStyle = "#FFD700";
   ctx.beginPath();
   ctx.moveTo(center.x-12,6);
@@ -183,11 +184,10 @@ function drawWheel(rot){
   ctx.lineTo(center.x,34);
   ctx.fill();
 
-  // LOGO AL CENTRO
   drawLogo();
 }
 
-/* ------------------ PROBABILIDAD ------------------ */
+/* ------------------ PROBABILIDADES ------------------ */
 function pickByProb(){
   let r = Math.random(), acc = 0;
   for(const it of tablaProb){
@@ -197,20 +197,20 @@ function pickByProb(){
   return tablaProb[0].premio;
 }
 
-/* ------------------ GIRO FINAL ------------------ */
+/* ------------------ ANIMACIÓN DEL GIRO ------------------ */
 function spinToPrize(prize){
   const n = premios.length;
   const anglePer = (2*Math.PI)/n;
   const idx = premios.indexOf(prize);
   if(idx<0) return;
 
-  const rotationTargetBase = -Math.PI/2 - (idx*anglePer + anglePer/2);
+  const base = -Math.PI/2 - (idx*anglePer + anglePer/2);
 
   function norm(a){while(a>Math.PI)a-=2*Math.PI;while(a<-Math.PI)a+=2*Math.PI;return a;}
   const current = norm(rotation);
 
   const vueltas = 5 + Math.floor(Math.random()*3);
-  let target = rotationTargetBase + vueltas*2*Math.PI;
+  let target = base + vueltas*2*Math.PI;
 
   while(target <= current) target += 2*Math.PI;
 
@@ -245,7 +245,7 @@ function animateRotation(from, to, duration, prize){
   requestAnimationFrame(frame);
 }
 
-/* ------------------ START ------------------ */
+/* ------------------ BOTÓN ------------------ */
 function startSpin(){
   if(spinning) return;
   const prize = pickByProb();
@@ -260,3 +260,4 @@ drawWheel(rotation);
 </script>
 </body>
 </html>
+
