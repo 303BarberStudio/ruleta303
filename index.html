@@ -227,33 +227,43 @@ function drawWheel(rot){
     ctx.stroke();
   }
 
-  /* TEXTO */
+  /* ------------------ TEXTO EN DOS LÍNEAS Y MÁS LEJOS ------------------ */
   for(let i=0;i<n;i++){
-    const ang=i*anglePer+anglePer/2+rot;
 
-    const tx=center.x+Math.cos(ang)*(radius*0.62);
-    const ty=center.y+Math.sin(ang)*(radius*0.62);
+    const ang = i * anglePer + anglePer/2 + rot;
 
-    /* tamaño dinámico */
-    let dynamicFont=Math.max(10,radius*0.045);
-    if(window.innerWidth<450){
-      dynamicFont=Math.max(10,radius*0.038);
+    /* MÁS LEJOS DEL CENTRO */
+    const tx = center.x + Math.cos(ang) * (radius * 0.70);
+    const ty = center.y + Math.sin(ang) * (radius * 0.70);
+
+    let dynamicFont = Math.max(10, radius * 0.045);
+    if (window.innerWidth < 450) {
+      dynamicFont = Math.max(10, radius * 0.038);
     }
 
-    ctx.font=`bold ${dynamicFont}px Arial`;
-    ctx.textAlign="center";
-    ctx.textBaseline="middle";
-    ctx.fillStyle="#000";
+    ctx.font = `bold ${dynamicFont}px Arial`;
+    ctx.fillStyle = "#000";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
 
-    const words=premios[i].split(" ");
-    let line1="",line2="";
+    /* FORZAR SIEMPRE DOS LÍNEAS */
+    const words = premios[i].split(" ");
+    let line1 = "";
+    let line2 = "";
 
-    for(const w of words){
-      if(ctx.measureText(line1+" "+w).width < radius*0.40){
-        line1+=(line1?" ":"")+w;
-      }else{
-        line2+=(line2?" ":"")+w;
+    for (const w of words) {
+      if (ctx.measureText(line1 + " " + w).width < radius * 0.42) {
+        line1 += (line1 ? " " : "") + w;
+      } else {
+        line2 += (line2 ? " " : "") + w;
       }
+    }
+
+    if (line2 === "") {
+      const partes = line1.split(" ");
+      const mitad = Math.ceil(partes.length / 2);
+      line2 = partes.slice(mitad).join(" ");
+      line1 = partes.slice(0, mitad).join(" ");
     }
 
     ctx.save();
@@ -261,16 +271,14 @@ function drawWheel(rot){
 
     let textAngle=ang+Math.PI/2;
     const deg=textAngle%(2*Math.PI);
+
     if(deg>Math.PI/2 && deg<3*Math.PI/2) textAngle+=Math.PI;
 
     ctx.rotate(textAngle);
 
-    if(!line2){
-      ctx.fillText(line1,0,0);
-    }else{
-      ctx.fillText(line1,0,-dynamicFont*0.55);
-      ctx.fillText(line2,0,dynamicFont*0.55);
-    }
+    ctx.fillText(line1, 0, -dynamicFont*0.55);
+    ctx.fillText(line2, 0,  dynamicFont*0.55);
+
     ctx.restore();
   }
 
@@ -362,5 +370,3 @@ drawWheel(rotation);
 </script>
 </body>
 </html>
-
-
