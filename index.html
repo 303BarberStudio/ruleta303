@@ -7,69 +7,180 @@
 <style>
   :root{
     --gold:#d4af37;
-    --gold-dark:#b68626;
+    --gold-light:#f9e076;
+    --gold-dark:#b8941f;
     --white:#ffffff;
-    --bg:#0b0b0b;
+    --bg:#000;
     --panel:#111;
+    --premium-gold:#ffd700;
+    --premium-shadow:#ff6b00;
   }
-
   html,body{
-    height:100%;margin:0;
-    background:linear-gradient(180deg,#050505,var(--bg));
-    font-family:Inter,Arial,Helvetica,sans-serif;color:#fff
+    height:100%;
+    margin:0;
+    background:var(--bg);
+    font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    overflow:hidden;
   }
-
   .wrap{
-    height:100%;display:flex;align-items:center;justify-content:center;
-    flex-direction:column;position:relative;padding:18px 0
+    height:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-direction:column;
+    position:relative;
+    background: radial-gradient(circle at center, #1a1a1a 0%, #000 100%);
   }
-
-  canvas{display:block;border-radius:12px}
-
+  canvas{
+    display:block;
+    box-shadow: 0 0 40px rgba(212,175,55,0.4);
+    border-radius: 50%;
+    filter: drop-shadow(0 0 10px rgba(212,175,55,0.3));
+  }
   #panel{
-    position:absolute;bottom:0;width:100%;background:var(--panel);
-    padding:18px 12px;
-    box-shadow:0 -6px 30px rgba(212,175,55,0.10);
-    text-align:center
+    position:absolute;
+    bottom:0;
+    width:100%;
+    background: linear-gradient(to top, #0a0a0a, #222);
+    padding:20px 12px;
+    box-shadow:0 -8px 25px rgba(212,175,55,0.15);
+    text-align:center;
+    z-index:10;
+    border-top: 1px solid rgba(212,175,55,0.2);
   }
-
   button{
-    background:linear-gradient(180deg,var(--gold),var(--gold-dark));
-    padding:14px 36px;border:none;border-radius:12px;
-    font-size:18px;font-weight:800;cursor:pointer;color:#000;
-    box-shadow:0 6px 18px rgba(0,0,0,0.45)
+    background: linear-gradient(to bottom, #d4af37, #b8941f);
+    border: none;
+    padding: 16px 40px;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    color: #000;
+    transition: all 0.3s ease;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.4), 
+                inset 0 1px 0 rgba(255,255,255,0.3);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    position: relative;
+    overflow: hidden;
   }
-
+  button:hover{
+    background: linear-gradient(to bottom, #e0b845, #c49d22);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.5), 
+                inset 0 1px 0 rgba(255,255,255,0.4);
+  }
+  button:active{
+    transform: translateY(1px);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.4), 
+                inset 0 1px 0 rgba(255,255,255,0.2);
+  }
+  button::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+  }
+  button:hover::after {
+    left: 100%;
+  }
   #resultado{
-    margin-top:10px;color:#FFD700;font-weight:800;font-size:20px;min-height:26px
+    margin-top:12px;
+    color:#FFD700;
+    font-weight:700;
+    font-size:20px;
+    height: 28px;
+    text-shadow: 0 0 5px rgba(255,215,0,0.5);
   }
-
-  .canvas-wrap{
-    position:relative;display:inline-block;padding:18px;border-radius:22px;
+  .logo-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 130px;
+    height: 130px;
+    border-radius: 50%;
+    z-index: 5;
+    pointer-events: none;
+    filter: drop-shadow(0 0 8px rgba(212,175,55,0.6));
   }
-
-  .gold-glow{
-    position:absolute;left:0;top:0;right:0;bottom:0;border-radius:28px;
-    pointer-events:none;
-    box-shadow:0 0 30px 6px rgba(212,175,55,0.06), inset 0 0 60px rgba(212,175,55,0.03);
-    animation:pulseGlow 3.6s ease-in-out infinite;
+  .logo-ring {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #d4af37, #f9e076, #d4af37, #b8941f);
+    box-shadow: 0 0 20px rgba(212,175,55,0.8),
+                inset 0 0 15px rgba(255,255,255,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: shine 3s infinite;
   }
-
-  @keyframes pulseGlow{
-    0% {box-shadow:0 0 20px 2px rgba(212,175,55,0.04), inset 0 0 40px rgba(212,175,55,0.02);transform:scale(1);}
-    50%{box-shadow:0 0 36px 10px rgba(212,175,55,0.09), inset 0 0 80px rgba(212,175,55,0.03);transform:scale(1.005);}
-    100%{box-shadow:0 0 20px 2px rgba(212,175,55,0.04), inset 0 0 40px rgba(212,175,55,0.02);transform:scale(1);}
+  .logo-ring-inner {
+    width: 88%;
+    height: 88%;
+    border-radius: 50%;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: 2px solid #b8941f;
+  }
+  .logo-ring-inner img {
+    max-width: 80%;
+    max-height: 80%;
+    border-radius: 50%;
+  }
+  @keyframes shine {
+    0% { box-shadow: 0 0 20px rgba(212,175,55,0.8), inset 0 0 15px rgba(255,255,255,0.3); }
+    50% { box-shadow: 0 0 25px rgba(212,175,55,1), inset 0 0 20px rgba(255,255,255,0.5); }
+    100% { box-shadow: 0 0 20px rgba(212,175,55,0.8), inset 0 0 15px rgba(255,255,255,0.3); }
+  }
+  .title {
+    position: absolute;
+    top: 20px;
+    text-align: center;
+    width: 100%;
+    color: #d4af37;
+    font-size: 24px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-shadow: 0 0 10px rgba(212,175,55,0.7);
+    z-index: 2;
+  }
+  /* Ajustes responsivos */
+  @media (max-width:520px){
+    canvas{width:360px;height:360px}
+    .logo-container {
+      width: 100px;
+      height: 100px;
+    }
+    .title {
+      font-size: 20px;
+      top: 15px;
+    }
   }
 </style>
 </head>
-
 <body>
 <div class="wrap">
-  <div class="canvas-wrap">
-    <canvas id="canvas" width="520" height="520"></canvas>
-    <div class="gold-glow"></div>
+  <div class="title">303 Barber Studio</div>
+  <canvas id="canvas" width="480" height="480"></canvas>
+  <div class="logo-container">
+    <div class="logo-ring">
+      <div class="logo-ring-inner">
+        <img src="logo.jpg" alt="303 Barber Studio Logo" id="logo">
+      </div>
+    </div>
   </div>
-
   <div id="panel">
     <button id="girarBtn">GIRAR</button>
     <div id="resultado"></div>
@@ -77,7 +188,7 @@
 </div>
 
 <script>
-/* ---------------- PREMIOS ---------------- */
+/* ---- CONFIG ----- */
 const premios = [
   "Masaje completo",
   "Exfoliación",
@@ -90,281 +201,319 @@ const premios = [
 ];
 
 const tablaProb = [
-  { premio:"Masaje completo", prob:0.14 },
-  { premio:"Exfoliación", prob:0.14 },
-  { premio:"25% de descuento", prob:0.14 },
-  { premio:"25% descuento productos", prob:0.14 },
-  { premio:"Barba gratis", prob:0.14 },
-  { premio:"Cejas gratis", prob:0.14 },
-  { premio:"Corte gratis", prob:0.05 },
-  { premio:"Otro giro", prob:0.11 }
+  { premio: "Masaje completo", prob: 0.14 },
+  { premio: "Exfoliación", prob: 0.14 },
+  { premio: "25% de descuento", prob: 0.14 },
+  { premio: "25% descuento productos", prob: 0.14 },
+  { premio: "Barba gratis", prob: 0.14 },
+  { premio: "Cejas gratis", prob: 0.14 },
+  { premio: "Corte gratis", prob: 0.05 },
+  { premio: "Otro giro", prob: 0.11 }
 ];
 
-/* ---------------- CANVAS ---------------- */
-const canvas=document.getElementById('canvas');
-const ctx=canvas.getContext('2d');
-
-let W=canvas.width,H=canvas.height;
-const center={x:W/2,y:H/2};
-let radius=Math.min(W,H)/2 - 24;
-
-let rotation=0;
-let spinning=false;
-
-/* RESPONSIVE */
-function resizeCanvas(){
-  const ratio=window.devicePixelRatio||1;
-  const cssW=Math.min(window.innerWidth-40,520);
-
-  canvas.style.width=cssW+"px";
-  canvas.style.height=cssW+"px";
-  canvas.width=Math.round(cssW*ratio);
-  canvas.height=Math.round(cssW*ratio);
-
-  ctx.setTransform(ratio,0,0,ratio,0,0);
-
-  W=canvas.width/ratio;
-  H=canvas.height/ratio;
-  center.x=W/2; center.y=H/2;
-  radius=Math.min(W,H)/2 - 24;
-}
-window.addEventListener("resize",resizeCanvas);
-window.addEventListener("load",resizeCanvas);
-
-/* GOLD FOIL */
-let goldPattern=null;
-(function(){
-  const t=document.createElement('canvas');
-  t.width=256;t.height=256;
-  const tc=t.getContext('2d');
-
-  const g=tc.createLinearGradient(0,0,256,256);
-  g.addColorStop(0,'#f8e7b4');
-  g.addColorStop(0.4,'#d4af37');
-  g.addColorStop(0.6,'#b68626');
-  g.addColorStop(1,'#ffeaa0');
-  tc.fillStyle=g;
-  tc.fillRect(0,0,256,256);
-
-  const img=tc.getImageData(0,0,256,256);
-  for(let i=0;i<img.data.length;i+=4){
-    const v=(Math.random()-0.5)*20;
-    img.data[i]+=v; img.data[i+1]+=v; img.data[i+2]+=v;
+// Colores mejorados con efecto metalizado
+const colores = [];
+for(let i=0;i<premios.length;i++) {
+  if(premios[i] === "Corte gratis") {
+    // Color especial para el premio mayor
+    colores.push("premium");
+  } else {
+    colores.push(i%2===0 ? "gold" : "white");
   }
-  tc.putImageData(img,0,0);
-
-  goldPattern=ctx.createPattern(t,'repeat');
-})();
-
-/* LOGO */
-const logo=new Image();
-logo.src="logo.jpg";
-
-function drawLogo(){
-  if(!logo.complete) return;
-
-  const size=radius*0.60;
-  const half=size/2;
-
-  ctx.save();
-  ctx.beginPath();
-  ctx.arc(center.x,center.y,half,0,Math.PI*2);
-  ctx.clip();
-  ctx.drawImage(logo,center.x-half,center.y-half,size,size);
-  ctx.restore();
-
-  ctx.beginPath();
-  ctx.arc(center.x,center.y,half,0,Math.PI*2);
-  ctx.lineWidth=radius*0.04;
-  ctx.strokeStyle="#d4af37";
-  ctx.stroke();
 }
 
-/* ---------------- DIBUJAR RULETA ---------------- */
+/* ---- CANVAS ---- */
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let W = canvas.width, H = canvas.height;
+const center = { x: W/2, y: H/2 };
+const radius = Math.min(W,H)/2 - 10;
+
+/* estado */
+let rotation = 0;         // rotación actual (radianes)
+let spinning = false;
+
+/* util: ajustar canvas para pantallas con devicePixelRatio */
+function resizeCanvas(){
+  const ratio = window.devicePixelRatio || 1;
+  const cssW = Math.min(window.innerWidth - 40, 480);
+  canvas.style.width = cssW + "px";
+  canvas.style.height = cssW + "px";
+  canvas.width = Math.round(cssW * ratio);
+  canvas.height = Math.round(cssW * ratio);
+  ctx.setTransform(ratio,0,0,ratio,0,0);
+  W = canvas.width/ratio; H = canvas.height/ratio;
+  center.x = W/2; center.y = H/2;
+}
+window.addEventListener('load', resizeCanvas);
+window.addEventListener('resize', resizeCanvas);
+
+/* ---- DIBUJO ---- */
 function drawWheel(rot){
   ctx.clearRect(0,0,W,H);
+  const n = premios.length;
+  const anglePer = (2*Math.PI)/n;
 
-  const n=premios.length;
-  const anglePer=(2*Math.PI)/n;
+  // Fondo con efecto de brillo
+  const gradient = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, radius);
+  gradient.addColorStop(0, 'rgba(212,175,55,0.1)');
+  gradient.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, W, H);
 
-  /* SECTORES */
+  // sectores
   for(let i=0;i<n;i++){
-    const start=i*anglePer+rot;
-    const end=start+anglePer;
-
+    const start = i*anglePer + rot;
+    const end = start + anglePer;
     ctx.beginPath();
-    ctx.moveTo(center.x,center.y);
-    ctx.arc(center.x,center.y,radius,start,end);
+    ctx.moveTo(center.x, center.y);
+    ctx.arc(center.x, center.y, radius, start, end);
     ctx.closePath();
-
-    ctx.fillStyle = (i%2===0 ? goldPattern : "#ffffff");
+    
+    if(colores[i] === "premium") {
+      // Efecto premium para "Corte gratis"
+      const premiumGradient = ctx.createLinearGradient(
+        center.x + Math.cos(start) * radius,
+        center.y + Math.sin(start) * radius,
+        center.x + Math.cos(end) * radius,
+        center.y + Math.sin(end) * radius
+      );
+      premiumGradient.addColorStop(0, '#ffd700');
+      premiumGradient.addColorStop(0.5, '#ffec8b');
+      premiumGradient.addColorStop(1, '#ffd700');
+      ctx.fillStyle = premiumGradient;
+    } else if(colores[i] === "gold") {
+      // Efecto dorado metalizado
+      const goldGradient = ctx.createLinearGradient(
+        center.x + Math.cos(start) * radius,
+        center.y + Math.sin(start) * radius,
+        center.x + Math.cos(end) * radius,
+        center.y + Math.sin(end) * radius
+      );
+      goldGradient.addColorStop(0, '#d4af37');
+      goldGradient.addColorStop(0.5, '#f9e076');
+      goldGradient.addColorStop(1, '#b8941f');
+      ctx.fillStyle = goldGradient;
+    } else {
+      ctx.fillStyle = '#ffffff';
+    }
+    
     ctx.fill();
-
-    /* CASILLERO “CORTE GRATIS” DESTACADO */
-    if(premios[i]==="Corte gratis"){
-      ctx.save();
-      ctx.globalAlpha=0.22;
-      const g=ctx.createLinearGradient(0,0,W,H);
-      g.addColorStop(0,'#fff9d0');
-      g.addColorStop(1,'#b68a2a');
-      ctx.fillStyle=g;
-      ctx.beginPath();
-      ctx.moveTo(center.x,center.y);
-      ctx.arc(center.x,center.y,radius,start,end);
-      ctx.fill();
-      ctx.restore();
+    
+    // Efecto de brillo en los bordes
+    if(colores[i] === "premium") {
+      ctx.strokeStyle = '#ff6b00';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+    } else if(colores[i] === "gold") {
+      ctx.strokeStyle = '#b8941f';
+      ctx.lineWidth = 2;
+      ctx.stroke();
     }
   }
 
-  /* LÍNEAS */
-  ctx.strokeStyle="rgba(0,0,0,0.28)";
-  ctx.lineWidth=radius*0.008;
+  // texto: colocado siguiendo el radio, pero ajustado para ser legible
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
   for(let i=0;i<n;i++){
-    const a=i*anglePer+rot;
-    ctx.beginPath();
-    ctx.moveTo(center.x,center.y);
-    ctx.lineTo(center.x+Math.cos(a)*radius, center.y+Math.sin(a)*radius);
-    ctx.stroke();
-  }
+    const ang = i*anglePer + anglePer/2 + rot;
+    const tx = center.x + Math.cos(ang) * (radius * 0.62);
+    const ty = center.y + Math.sin(ang) * (radius * 0.62);
 
-  /* ------------------ TEXTO EN DOS LÍNEAS Y MÁS LEJOS ------------------ */
-  for(let i=0;i<n;i++){
+    // decidir rotación de texto para que quede legible
+    let textAngle = ang + Math.PI/2; // tangent orientation
+    // si queda "boca abajo", dar la vuelta
+    const deg = (textAngle % (2*Math.PI));
+    if(deg > Math.PI/2 && deg < 3*Math.PI/2) textAngle += Math.PI;
 
-    const ang = i * anglePer + anglePer/2 + rot;
-
-    /* MÁS LEJOS DEL CENTRO */
-    const tx = center.x + Math.cos(ang) * (radius * 0.70);
-    const ty = center.y + Math.sin(ang) * (radius * 0.70);
-
-    let dynamicFont = Math.max(10, radius * 0.045);
-    if (window.innerWidth < 450) {
-      dynamicFont = Math.max(10, radius * 0.038);
-    }
-
-    ctx.font = `bold ${dynamicFont}px Arial`;
-    ctx.fillStyle = "#000";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-
-    /* FORZAR SIEMPRE DOS LÍNEAS */
-    const words = premios[i].split(" ");
-    let line1 = "";
-    let line2 = "";
-
-    for (const w of words) {
-      if (ctx.measureText(line1 + " " + w).width < radius * 0.42) {
-        line1 += (line1 ? " " : "") + w;
-      } else {
-        line2 += (line2 ? " " : "") + w;
-      }
-    }
-
-    if (line2 === "") {
-      const partes = line1.split(" ");
-      const mitad = Math.ceil(partes.length / 2);
-      line2 = partes.slice(mitad).join(" ");
-      line1 = partes.slice(0, mitad).join(" ");
+    // dibujar multi-linea sencillo
+    const words = premios[i].split(' ');
+    const lines = [];
+    // simple heur: 2 lines max, balanceable
+    if(words.length <= 2) lines.push(premios[i]);
+    else {
+      const half = Math.ceil(words.length/2);
+      lines.push(words.slice(0,half).join(' '));
+      lines.push(words.slice(half).join(' '));
     }
 
     ctx.save();
-    ctx.translate(tx,ty);
-
-    let textAngle=ang+Math.PI/2;
-    const deg=textAngle%(2*Math.PI);
-
-    if(deg>Math.PI/2 && deg<3*Math.PI/2) textAngle+=Math.PI;
-
+    ctx.translate(tx, ty);
     ctx.rotate(textAngle);
-
-    ctx.fillText(line1, 0, -dynamicFont*0.55);
-    ctx.fillText(line2, 0,  dynamicFont*0.55);
-
+    
+    // Estilo de texto diferente para el premio premium
+    if(premios[i] === "Corte gratis") {
+      ctx.font = "bold 16px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+      ctx.fillStyle = "#000";
+      // Sombra de texto para mejor legibilidad
+      ctx.shadowColor = 'rgba(255,215,0,0.7)';
+      ctx.shadowBlur = 4;
+    } else {
+      ctx.font = "bold 14px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+      ctx.fillStyle = "#000";
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+    }
+    
+    for(let l=0;l<lines.length;l++){
+      ctx.fillText(lines[l], 0, (l - (lines.length-1)/2) * 16);
+    }
     ctx.restore();
   }
 
-  /* ANILLO */
+  // borde dorado exterior con efecto metalizado
+  const borderGradient = ctx.createLinearGradient(0, 0, W, H);
+  borderGradient.addColorStop(0, '#d4af37');
+  borderGradient.addColorStop(0.5, '#f9e076');
+  borderGradient.addColorStop(1, '#b8941f');
+  
   ctx.beginPath();
-  ctx.arc(center.x,center.y,radius,0,Math.PI*2);
-  ctx.lineWidth=radius*0.06;
-  ctx.strokeStyle="#d4af37";
+  ctx.arc(center.x, center.y, radius, 0, Math.PI*2);
+  ctx.lineWidth = 10;
+  ctx.strokeStyle = borderGradient;
+  ctx.stroke();
+  
+  // Detalle interior del borde
+  ctx.beginPath();
+  ctx.arc(center.x, center.y, radius - 5, 0, Math.PI*2);
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = '#000';
+  ctx.stroke();
+  
+  // borde interior dorado
+  ctx.beginPath();
+  ctx.arc(center.x, center.y, radius * 0.25, 0, Math.PI*2);
+  ctx.lineWidth = 6;
+  ctx.strokeStyle = borderGradient;
   ctx.stroke();
 
-  /* FLECHA */
-  ctx.fillStyle="#fff6d5";
+  // flecha fija arriba (en la parte superior central) - Mejorada
+  const arrowGradient = ctx.createLinearGradient(center.x - 20, 0, center.x + 20, 40);
+  arrowGradient.addColorStop(0, '#ffd700');
+  arrowGradient.addColorStop(1, '#ff6b00');
+  
+  ctx.fillStyle = arrowGradient;
   ctx.beginPath();
-  ctx.moveTo(center.x-14,8);
-  ctx.lineTo(center.x+14,8);
-  ctx.lineTo(center.x,36);
+  const arrowW = 16;
+  ctx.moveTo(center.x - arrowW, 8);
+  ctx.lineTo(center.x + arrowW, 8);
+  ctx.lineTo(center.x, 40);
+  ctx.closePath();
   ctx.fill();
-
-  drawLogo();
+  
+  // Detalle de la flecha
+  ctx.fillStyle = '#b8941f';
+  ctx.beginPath();
+  ctx.moveTo(center.x - arrowW + 3, 12);
+  ctx.lineTo(center.x + arrowW - 3, 12);
+  ctx.lineTo(center.x, 36);
+  ctx.closePath();
+  ctx.fill();
+  
+  // Sombra de la flecha
+  ctx.shadowColor = 'rgba(255,107,0,0.5)';
+  ctx.shadowBlur = 10;
+  ctx.fill();
+  ctx.shadowBlur = 0;
 }
 
-/* ---------------- PROBABILIDADES ---------------- */
+/* ---- PROBABILIDAD ---- */
 function pickByProb(){
-  let r=Math.random(), acc=0;
+  let r = Math.random();
+  let acc = 0;
   for(const it of tablaProb){
-    acc+=it.prob;
-    if(r<=acc) return it.premio;
+    acc += it.prob;
+    if(r <= acc) return it.premio;
   }
   return tablaProb[0].premio;
 }
 
-/* -------------- ANIMACIÓN Y GIRO ---------------- */
+/* ---- ANIMACIÓN DE GIRO ---- */
 function spinToPrize(prize){
-  const n=premios.length;
-  const anglePer=(2*Math.PI)/n;
-  const idx=premios.indexOf(prize);
-  if(idx<0)return;
+  const n = premios.length;
+  const anglePer = (2*Math.PI)/n;
+  const idx = premios.indexOf(prize);
+  if(idx < 0) return;
 
-  const base=-Math.PI/2 - (idx*anglePer + anglePer/2);
+  // queremos que el centro del sector idx quede alineado con la flecha superior (ángulo -PI/2)
+  // fórmula: centerAngle = idx*anglePer + anglePer/2 + rotation_current
+  // queremos centerAngle === -PI/2  => rotation_target = -PI/2 - (idx*anglePer + anglePer/2)
+  const rotationTargetBase = -Math.PI/2 - (idx*anglePer + anglePer/2);
 
-  let current=((rotation% (2*Math.PI))+2*Math.PI)%(2*Math.PI);
+  // normalizar current rotation a rango [-PI, PI] para evitar saltos enormes
+  function norm(a){ while(a > Math.PI) a -= 2*Math.PI; while(a < -Math.PI) a += 2*Math.PI; return a; }
+  const current = norm(rotation);
 
-  let target=base + (5+Math.random()*2)*2*Math.PI;
+  // calcular objetivo cercano añadiendo vueltas completas para que gire hacia adelante (positive direction)
+  // elegimos varias vueltas (p.ej. 5-7) y luego sumamos rotationTargetBase
+  const vueltas = 5 + Math.floor(Math.random()*3); // 5..7
+  let target = rotationTargetBase + vueltas * 2 * Math.PI;
 
-  while(target<=current) target+=2*Math.PI;
+  // si target está muy lejano del current, ajustar para animar en la dirección más natural
+  // normalizamos target cercano a current + [0, 2PI*vueltas+small]
+  // ya está con vueltas positivas, pero alineamos para que la animación no salte negativamente
+  // aseguramos target > current
+  while(target <= current) target += 2*Math.PI;
 
-  animateRotation(current,target,2500,prize);
+  const duration = 2200 + Math.random()*600; // ms
+
+  animateRotation(current, target, duration, prize);
 }
 
-function animateRotation(from,to,duration,prize){
-  const start=performance.now();
-  spinning=true;
+function animateRotation(from, to, duration, prize){
+  const start = performance.now();
+  spinning = true;
 
   function frame(t){
-    const elapsed=t-start;
-    const p=Math.min(1,elapsed/duration);
-    const eased=1-Math.pow(1-p,3);
-
-    rotation=from+(to-from)*eased;
-
+    const elapsed = t - start;
+    const p = Math.min(1, elapsed / duration);
+    // easing (cubic out)
+    const eased = 1 - Math.pow(1 - p, 3);
+    rotation = from + (to - from) * eased;
     drawWheel(rotation);
-
-    if(p<1){
+    if(p < 1){
       requestAnimationFrame(frame);
-    }else{
-      spinning=false;
-      document.getElementById('resultado').innerText="Resultado: "+prize;
-
-      if(prize==="Otro giro"){
-        setTimeout(()=>startSpin(),800);
+    } else {
+      spinning = false;
+      // mostrar resultado textual
+      document.getElementById('resultado').innerText = "Resultado: " + prize;
+      // Efecto especial si es el premio mayor
+      if(prize === "Corte gratis") {
+        document.getElementById('resultado').style.textShadow = "0 0 10px #ff6b00";
+        document.getElementById('resultado').style.color = "#ffd700";
+      } else {
+        document.getElementById('resultado').style.textShadow = "0 0 5px rgba(255,215,0,0.5)";
+        document.getElementById('resultado').style.color = "#FFD700";
+      }
+      
+      // si "Otro giro" => volver a girar automáticamente
+      if(prize === "Otro giro"){
+        setTimeout(() => {
+          startSpin(); // nuevo spin
+        }, 900);
       }
     }
   }
   requestAnimationFrame(frame);
 }
 
-/* ---------------- START ---------------- */
+/* ---- START SPIN (elige por probabilidad y anima) ---- */
 function startSpin(){
   if(spinning) return;
-  const prize=pickByProb();
-  document.getElementById("resultado").innerText="Girando...";
+  const prize = pickByProb();
+  // si quieres, puedes mostrar "girando..." mientras anima
+  document.getElementById('resultado').innerText = "Girando...";
+  document.getElementById('resultado').style.textShadow = "0 0 5px rgba(255,215,0,0.5)";
   spinToPrize(prize);
 }
 
-document.getElementById('girarBtn').addEventListener('click',startSpin);
+/* ---- Hook botón ---- */
+document.getElementById('girarBtn').addEventListener('click', () => {
+  startSpin();
+});
 
+/* Render inicial */
 resizeCanvas();
 drawWheel(rotation);
 </script>
