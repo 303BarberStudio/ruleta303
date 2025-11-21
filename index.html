@@ -38,7 +38,7 @@
     display:block;
     box-shadow: 0 0 40px rgba(192,192,192,0.3);
     border-radius: 50%;
-    filter: drop-shadow(0 0 10px rgba(255,255,255,0.1));
+    filter: drop-shadow(0 0 15px rgba(255,255,255,0.2));
   }
   #panel{
     position:absolute;
@@ -99,6 +99,7 @@
     font-size:20px;
     height: 28px;
     text-shadow: 0 0 5px rgba(255,255,255,0.3);
+    transition: all 0.5s ease;
   }
   .logo-container {
     position: absolute;
@@ -110,7 +111,7 @@
     border-radius: 50%;
     z-index: 5;
     pointer-events: none;
-    filter: drop-shadow(0 0 8px rgba(255,255,255,0.4));
+    filter: drop-shadow(0 0 10px rgba(255,255,255,0.5));
   }
   .logo-ring {
     position: absolute;
@@ -159,6 +160,42 @@
     text-shadow: 0 0 10px rgba(255,255,255,0.5);
     z-index: 2;
   }
+  .premium-notification {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    background: linear-gradient(45deg, #d4af37, #f9e076, #d4af37);
+    color: #000;
+    padding: 20px 40px;
+    border-radius: 15px;
+    font-size: 28px;
+    font-weight: bold;
+    text-align: center;
+    z-index: 20;
+    box-shadow: 0 0 30px rgba(212,175,55,0.8);
+    transition: transform 0.5s ease;
+    border: 3px solid #b8941f;
+  }
+  .premium-notification.show {
+    transform: translate(-50%, -50%) scale(1);
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse {
+    0% { transform: translate(-50%, -50%) scale(1); }
+    50% { transform: translate(-50%, -50%) scale(1.05); }
+    100% { transform: translate(-50%, -50%) scale(1); }
+  }
+  .sparkle {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: #fff;
+    border-radius: 50%;
+    pointer-events: none;
+    opacity: 0;
+    filter: blur(1px);
+  }
   /* Ajustes responsivos */
   @media (max-width:520px){
     canvas{width:360px;height:360px}
@@ -169,6 +206,10 @@
     .title {
       font-size: 20px;
       top: 15px;
+    }
+    .premium-notification {
+      font-size: 22px;
+      padding: 15px 30px;
     }
   }
 </style>
@@ -187,6 +228,9 @@
   <div id="panel">
     <button id="girarBtn">GIRAR</button>
     <div id="resultado"></div>
+  </div>
+  <div class="premium-notification" id="premiumNotification">
+    ¡GANASTE EL PREMIO MAYOR!
   </div>
 </div>
 
@@ -425,6 +469,49 @@ function drawWheel(rot){
   ctx.shadowBlur = 0;
 }
 
+/* ---- EFECTOS ESPECIALES ---- */
+function createSparkles() {
+  const container = document.querySelector('.wrap');
+  for (let i = 0; i < 20; i++) {
+    const sparkle = document.createElement('div');
+    sparkle.className = 'sparkle';
+    sparkle.style.left = Math.random() * 100 + 'vw';
+    sparkle.style.top = Math.random() * 100 + 'vh';
+    sparkle.style.animationDelay = Math.random() * 2 + 's';
+    container.appendChild(sparkle);
+    
+    // Animación
+    setTimeout(() => {
+      sparkle.style.opacity = '1';
+      sparkle.style.transform = 'translate(' + (Math.random() * 100 - 50) + 'px, ' + (Math.random() * 100 - 50) + 'px)';
+      setTimeout(() => {
+        sparkle.style.opacity = '0';
+        setTimeout(() => {
+          sparkle.remove();
+        }, 1000);
+      }, 1000);
+    }, 100);
+  }
+}
+
+function showPremiumNotification() {
+  const notification = document.getElementById('premiumNotification');
+  notification.classList.add('show');
+  createSparkles();
+  
+  // Efecto de sonido simulado (podrías agregar un sonido real aquí)
+  try {
+    // Simular vibración en dispositivos móviles
+    if (navigator.vibrate) {
+      navigator.vibrate([200, 100, 200, 100, 200]);
+    }
+  } catch (e) {}
+  
+  setTimeout(() => {
+    notification.classList.remove('show');
+  }, 3000);
+}
+
 /* ---- PROBABILIDAD ---- */
 function pickByProb(){
   let r = Math.random();
@@ -489,9 +576,12 @@ function animateRotation(from, to, duration, prize){
       if(prize === "Corte gratis") {
         document.getElementById('resultado').style.textShadow = "0 0 10px #ffd700";
         document.getElementById('resultado').style.color = "#ffd700";
+        document.getElementById('resultado').style.fontSize = "22px";
+        showPremiumNotification();
       } else {
         document.getElementById('resultado').style.textShadow = "0 0 5px rgba(255,255,255,0.5)";
         document.getElementById('resultado').style.color = "#c0c0c0";
+        document.getElementById('resultado').style.fontSize = "20px";
       }
       
       // si "Otro giro" => volver a girar automáticamente
@@ -512,6 +602,7 @@ function startSpin(){
   // si quieres, puedes mostrar "girando..." mientras anima
   document.getElementById('resultado').innerText = "Girando...";
   document.getElementById('resultado').style.textShadow = "0 0 5px rgba(255,255,255,0.5)";
+  document.getElementById('resultado').style.fontSize = "20px";
   spinToPrize(prize);
 }
 
