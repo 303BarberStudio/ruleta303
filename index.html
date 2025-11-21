@@ -34,6 +34,10 @@
     position:relative;
     background: radial-gradient(circle at center, #1a1a1a 0%, #000 100%);
   }
+  .canvas-container {
+    position: relative;
+    display: inline-block;
+  }
   canvas{
     display:block;
     box-shadow: 0 0 40px rgba(192,192,192,0.3);
@@ -181,21 +185,106 @@
     transform: translate(-50%, -50%) scale(1);
     animation: pulse 1.5s infinite;
   }
+  
+  /* Efectos de carga de energía */
+  .energy-charge {
+    position: absolute;
+    bottom: 100px;
+    width: 200px;
+    height: 8px;
+    background: rgba(192,192,192,0.2);
+    border-radius: 4px;
+    overflow: hidden;
+    display: none;
+  }
+  .energy-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #c0c0c0, #e8e8e8, #c0c0c0);
+    border-radius: 4px;
+    transition: width 0.1s linear;
+    box-shadow: 0 0 10px rgba(255,255,255,0.5);
+  }
+  
+  /* Efectos de partículas - RELATIVOS AL LOGO */
+  .effects-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 15;
+  }
+  .particle {
+    position: absolute;
+    pointer-events: none;
+    border-radius: 50%;
+  }
+  .spark {
+    width: 4px;
+    height: 4px;
+    background: #ffd700;
+    box-shadow: 0 0 8px #ffd700;
+  }
+  .smoke {
+    width: 8px;
+    height: 8px;
+    background: rgba(255,255,255,0.3);
+    filter: blur(2px);
+  }
+  .light-trail {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: #fff;
+    border-radius: 50%;
+    pointer-events: none;
+    filter: blur(1px);
+    opacity: 0;
+  }
+  
+  /* Efecto de explosión */
+  .explosion {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 25;
+  }
+  .explosion-ring {
+    position: absolute;
+    border: 2px solid #ffd700;
+    border-radius: 50%;
+    opacity: 0;
+  }
+  
   @keyframes pulse {
     0% { transform: translate(-50%, -50%) scale(1); }
     50% { transform: translate(-50%, -50%) scale(1.05); }
     100% { transform: translate(-50%, -50%) scale(1); }
   }
-  .sparkle {
-    position: absolute;
-    width: 8px;
-    height: 8px;
-    background: #fff;
-    border-radius: 50%;
-    pointer-events: none;
-    opacity: 0;
-    filter: blur(1px);
+  @keyframes cameraShake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
   }
+  
+  @keyframes explodeRing {
+    0% { 
+      transform: translate(-50%, -50%) scale(0); 
+      opacity: 1; 
+    }
+    100% { 
+      transform: translate(-50%, -50%) scale(1); 
+      opacity: 0; 
+    }
+  }
+  
   /* Ajustes responsivos */
   @media (max-width:520px){
     canvas{width:360px;height:360px}
@@ -211,22 +300,31 @@
       font-size: 22px;
       padding: 15px 30px;
     }
+    .energy-charge {
+      width: 150px;
+    }
   }
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="title">303 Barber Studio</div>
-  <canvas id="canvas" width="480" height="480"></canvas>
-  <div class="logo-container">
-    <div class="logo-ring">
-      <div class="logo-ring-inner">
-        <img src="logo.jpg" alt="303 Barber Studio Logo" id="logo">
+  <div class="canvas-container">
+    <canvas id="canvas" width="480" height="480"></canvas>
+    <div class="effects-container" id="effectsContainer"></div>
+    <div class="logo-container" id="logoContainer">
+      <div class="logo-ring">
+        <div class="logo-ring-inner">
+          <img src="logo.jpg" alt="303 Barber Studio Logo" id="logo">
+        </div>
       </div>
     </div>
   </div>
   <div id="panel">
     <button id="girarBtn">GIRAR</button>
+    <div class="energy-charge" id="energyCharge">
+      <div class="energy-bar" id="energyBar"></div>
+    </div>
     <div id="resultado"></div>
   </div>
   <div class="premium-notification" id="premiumNotification">
@@ -276,8 +374,12 @@ const center = { x: W/2, y: H/2 };
 const radius = Math.min(W,H)/2 - 10;
 
 /* estado */
-let rotation = 0;         // rotación actual (radianes)
+let rotation = 0;
 let spinning = false;
+let chargeInterval;
+let lightTrails = [];
+let smokeParticles = [];
+let logoCenter = { x: 0, y: 0 };
 
 /* util: ajustar canvas para pantallas con devicePixelRatio */
 function resizeCanvas(){
@@ -290,11 +392,288 @@ function resizeCanvas(){
   ctx.setTransform(ratio,0,0,ratio,0,0);
   W = canvas.width/ratio; H = canvas.height/ratio;
   center.x = W/2; center.y = H/2;
+  
+  // Actualizar posición del logo
+  updateLogoPosition();
 }
+
+function updateLogoPosition() {
+  const logoContainer = document.getElementById('logoContainer');
+  const rect = logoContainer.getBoundingClientRect();
+  const canvasRect = canvas.getBoundingClientRect();
+  
+  // Calcular posición relativa del logo dentro del canvas
+  logoCenter.x = rect.left + rect.width/2 - canvasRect.left;
+  logoCenter.y = rect.top + rect.height/2 - canvasRect.top;
+}
+
 window.addEventListener('load', resizeCanvas);
 window.addEventListener('resize', resizeCanvas);
 
-/* ---- DIBUJO ---- */
+/* ---- EFECTO 6: CARGA DE ENERGÍA ---- */
+function startEnergyCharge() {
+  const energyCharge = document.getElementById('energyCharge');
+  const energyBar = document.getElementById('energyBar');
+  
+  energyCharge.style.display = 'block';
+  energyBar.style.width = '0%';
+  
+  let charge = 0;
+  clearInterval(chargeInterval);
+  
+  chargeInterval = setInterval(() => {
+    charge += 2;
+    energyBar.style.width = charge + '%';
+    
+    // Efecto visual de brillo creciente
+    energyBar.style.boxShadow = `0 0 ${charge/2}px rgba(255,255,255,0.7)`;
+    
+    if(charge >= 100) {
+      clearInterval(chargeInterval);
+      energyCharge.style.display = 'none';
+      // Vibración al completar carga
+      vibrate([100]);
+    }
+  }, 30);
+}
+
+/* ---- EFECTO 14: EXPLOSIÓN DORADA ---- */
+function createGoldenExplosion() {
+  const effectsContainer = document.getElementById('effectsContainer');
+  const explosion = document.createElement('div');
+  explosion.className = 'explosion';
+  explosion.style.left = logoCenter.x + 'px';
+  explosion.style.top = logoCenter.y + 'px';
+  effectsContainer.appendChild(explosion);
+  
+  // Crear anillos concéntricos
+  for(let i = 1; i <= 5; i++) {
+    const ring = document.createElement('div');
+    ring.className = 'explosion-ring';
+    ring.style.width = (i * 60) + 'px';
+    ring.style.height = (i * 60) + 'px';
+    ring.style.left = '0px';
+    ring.style.top = '0px';
+    ring.style.borderColor = i % 2 === 0 ? '#ffd700' : '#ffec8b';
+    ring.style.animation = `explodeRing 0.6s ease-out ${i * 0.1}s forwards`;
+    explosion.appendChild(ring);
+  }
+  
+  // Crear partículas de explosión
+  createExplosionParticles();
+  
+  // Efecto de shake de cámara
+  document.querySelector('.canvas-container').style.animation = 'cameraShake 0.5s ease-out';
+  setTimeout(() => {
+    document.querySelector('.canvas-container').style.animation = '';
+  }, 500);
+  
+  // Limpiar explosión después de la animación
+  setTimeout(() => {
+    explosion.remove();
+  }, 1000);
+}
+
+function createExplosionParticles() {
+  const effectsContainer = document.getElementById('effectsContainer');
+  
+  for(let i = 0; i < 30; i++) {
+    setTimeout(() => {
+      const particle = document.createElement('div');
+      particle.className = 'particle spark';
+      
+      // Posicionar en el centro del logo
+      particle.style.left = logoCenter.x + 'px';
+      particle.style.top = logoCenter.y + 'px';
+      
+      const angle = Math.random() * Math.PI * 2;
+      const distance = 50 + Math.random() * 100;
+      const duration = 800 + Math.random() * 400;
+      
+      effectsContainer.appendChild(particle);
+      
+      // Animación
+      particle.animate([
+        { 
+          transform: 'translate(-50%, -50%) scale(1)',
+          opacity: 1
+        },
+        { 
+          transform: `translate(calc(-50% + ${Math.cos(angle) * distance}px), calc(-50% + ${Math.sin(angle) * distance}px)) scale(0)`,
+          opacity: 0
+        }
+      ], {
+        duration: duration,
+        easing: 'cubic-bezier(0.2, 0.8, 0.3, 1)'
+      });
+      
+      setTimeout(() => particle.remove(), duration);
+    }, i * 20);
+  }
+}
+
+/* ---- EFECTO 15: HUMO Y CHISPAS ---- */
+function createSmokeAndSparks() {
+  const effectsContainer = document.getElementById('effectsContainer');
+  
+  // Calcular posición de la flecha (centro superior del canvas)
+  const arrowX = logoCenter.x;
+  const arrowY = 40; // Posición fija de la flecha
+  
+  // Crear humo continuo
+  const smokeInterval = setInterval(() => {
+    if(!spinning) {
+      clearInterval(smokeInterval);
+      return;
+    }
+    
+    const smoke = document.createElement('div');
+    smoke.className = 'particle smoke';
+    
+    // Posicionar en la base de la flecha
+    smoke.style.left = arrowX + 'px';
+    smoke.style.top = arrowY + 'px';
+    
+    effectsContainer.appendChild(smoke);
+    smokeParticles.push(smoke);
+    
+    // Animación de humo
+    smoke.animate([
+      { 
+        transform: 'translate(-50%, -50%) scale(1)',
+        opacity: 0.6
+      },
+      { 
+        transform: `translate(calc(-50% + ${Math.random() * 40 - 20}px), calc(-50% + ${30 + Math.random() * 20}px)) scale(2)`,
+        opacity: 0
+      }
+    ], {
+      duration: 2000,
+      easing: 'ease-out'
+    });
+    
+    setTimeout(() => {
+      smoke.remove();
+      smokeParticles = smokeParticles.filter(p => p !== smoke);
+    }, 2000);
+  }, 200);
+  
+  // Crear chispas aleatorias
+  const sparkInterval = setInterval(() => {
+    if(!spinning) {
+      clearInterval(sparkInterval);
+      return;
+    }
+    
+    createSparkAtArrow(arrowX, arrowY);
+  }, 300);
+}
+
+function createSparkAtArrow(arrowX, arrowY) {
+  const effectsContainer = document.getElementById('effectsContainer');
+  const spark = document.createElement('div');
+  spark.className = 'particle spark';
+  
+  // Posicionar en la flecha con variación
+  spark.style.left = (arrowX + Math.random() * 16 - 8) + 'px';
+  spark.style.top = arrowY + 'px';
+  
+  effectsContainer.appendChild(spark);
+  
+  spark.animate([
+    { 
+      transform: 'translate(-50%, -50%) scale(1)',
+      opacity: 1
+    },
+    { 
+      transform: `translate(calc(-50% + ${Math.random() * 30 - 15}px), calc(-50% + ${20 + Math.random() * 20}px)) scale(0)`,
+      opacity: 0
+    }
+  ], {
+    duration: 600 + Math.random() * 400,
+    easing: 'ease-out'
+  });
+  
+  setTimeout(() => spark.remove(), 1000);
+}
+
+/* ---- EFECTO 16: DESTELLOS MÓVILES ---- */
+function updateLightTrails(currentRotation) {
+  const effectsContainer = document.getElementById('effectsContainer');
+  
+  // Limpiar trails viejos
+  lightTrails = lightTrails.filter(trail => {
+    if(trail.opacity <= 0) {
+      trail.element.remove();
+      return false;
+    }
+    return true;
+  });
+  
+  // Crear nuevo trail en la posición actual debajo de la flecha
+  if(spinning) {
+    const trail = document.createElement('div');
+    trail.className = 'light-trail';
+    
+    // Posicionar en el borde superior (debajo de la flecha)
+    const angle = -Math.PI/2; // Ángulo de la flecha (arriba)
+    const trailX = logoCenter.x + Math.cos(angle) * (radius - 10);
+    const trailY = logoCenter.y + Math.sin(angle) * (radius - 10);
+    
+    trail.style.left = trailX + 'px';
+    trail.style.top = trailY + 'px';
+    trail.style.opacity = '0.8';
+    trail.style.background = `hsl(${(currentRotation * 180/Math.PI) % 360}, 100%, 70%)`;
+    
+    effectsContainer.appendChild(trail);
+    
+    lightTrails.push({
+      element: trail,
+      opacity: 0.8,
+      rotation: currentRotation,
+      x: trailX,
+      y: trailY
+    });
+  }
+  
+  // Actualizar opacidad y posición de trails existentes
+  lightTrails.forEach(trail => {
+    trail.opacity -= 0.05;
+    trail.element.style.opacity = trail.opacity;
+    
+    // Calcular nueva posición basada en la rotación actual
+    const angleOffset = trail.rotation - rotation;
+    const newX = logoCenter.x + Math.cos(-Math.PI/2 + angleOffset) * (radius - 10);
+    const newY = logoCenter.y + Math.sin(-Math.PI/2 + angleOffset) * (radius - 10);
+    
+    trail.element.style.left = newX + 'px';
+    trail.element.style.top = newY + 'px';
+  });
+}
+
+/* ---- EFECTO 19: VIBRACIONES HÁPTICAS ---- */
+function vibrate(pattern) {
+  if(navigator.vibrate) {
+    navigator.vibrate(pattern);
+  }
+}
+
+function startSpinVibration() {
+  // Vibración de aceleración
+  vibrate([50, 30, 50, 30, 50, 30, 100, 50, 100, 50, 150]);
+}
+
+function stopSpinVibration(prize) {
+  if(prize === "Corte gratis") {
+    // Vibración especial para premio mayor
+    vibrate([200, 100, 200, 100, 200]);
+  } else {
+    // Vibración normal de parada
+    vibrate([150]);
+  }
+}
+
+/* ---- DIBUJO DE LA RULETA ---- */
 function drawWheel(rot){
   ctx.clearRect(0,0,W,H);
   const n = premios.length;
@@ -363,7 +742,7 @@ function drawWheel(rot){
     }
   }
 
-  // texto: colocado siguiendo el radio, pero ajustado para ser legible
+  // texto
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
 
@@ -372,16 +751,12 @@ function drawWheel(rot){
     const tx = center.x + Math.cos(ang) * (radius * 0.62);
     const ty = center.y + Math.sin(ang) * (radius * 0.62);
 
-    // decidir rotación de texto para que quede legible
-    let textAngle = ang + Math.PI/2; // tangent orientation
-    // si queda "boca abajo", dar la vuelta
+    let textAngle = ang + Math.PI/2;
     const deg = (textAngle % (2*Math.PI));
     if(deg > Math.PI/2 && deg < 3*Math.PI/2) textAngle += Math.PI;
 
-    // dibujar multi-linea sencillo
     const words = premios[i].split(' ');
     const lines = [];
-    // simple heur: 2 lines max, balanceable
     if(words.length <= 2) lines.push(premios[i]);
     else {
       const half = Math.ceil(words.length/2);
@@ -393,11 +768,9 @@ function drawWheel(rot){
     ctx.translate(tx, ty);
     ctx.rotate(textAngle);
     
-    // Estilo de texto diferente para el premio premium
     if(premios[i] === "Corte gratis") {
       ctx.font = "bold 16px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
       ctx.fillStyle = "#000";
-      // Sombra de texto para mejor legibilidad
       ctx.shadowColor = 'rgba(255,215,0,0.7)';
       ctx.shadowBlur = 4;
     } else {
@@ -413,7 +786,7 @@ function drawWheel(rot){
     ctx.restore();
   }
 
-  // borde plateado exterior con efecto metalizado
+  // bordes
   const borderGradient = ctx.createLinearGradient(0, 0, W, H);
   borderGradient.addColorStop(0, '#c0c0c0');
   borderGradient.addColorStop(0.5, '#e8e8e8');
@@ -425,21 +798,19 @@ function drawWheel(rot){
   ctx.strokeStyle = borderGradient;
   ctx.stroke();
   
-  // Detalle interior del borde
   ctx.beginPath();
   ctx.arc(center.x, center.y, radius - 5, 0, Math.PI*2);
   ctx.lineWidth = 2;
   ctx.strokeStyle = '#000';
   ctx.stroke();
   
-  // borde interior plateado
   ctx.beginPath();
   ctx.arc(center.x, center.y, radius * 0.25, 0, Math.PI*2);
   ctx.lineWidth = 6;
   ctx.strokeStyle = borderGradient;
   ctx.stroke();
 
-  // flecha fija arriba (en la parte superior central) - Plateada
+  // flecha
   const arrowGradient = ctx.createLinearGradient(center.x - 20, 0, center.x + 20, 40);
   arrowGradient.addColorStop(0, '#e8e8e8');
   arrowGradient.addColorStop(1, '#a0a0a0');
@@ -453,7 +824,6 @@ function drawWheel(rot){
   ctx.closePath();
   ctx.fill();
   
-  // Detalle de la flecha
   ctx.fillStyle = '#c0c0c0';
   ctx.beginPath();
   ctx.moveTo(center.x - arrowW + 3, 12);
@@ -462,54 +832,13 @@ function drawWheel(rot){
   ctx.closePath();
   ctx.fill();
   
-  // Sombra de la flecha
   ctx.shadowColor = 'rgba(255,255,255,0.3)';
   ctx.shadowBlur = 10;
   ctx.fill();
   ctx.shadowBlur = 0;
-}
-
-/* ---- EFECTOS ESPECIALES ---- */
-function createSparkles() {
-  const container = document.querySelector('.wrap');
-  for (let i = 0; i < 20; i++) {
-    const sparkle = document.createElement('div');
-    sparkle.className = 'sparkle';
-    sparkle.style.left = Math.random() * 100 + 'vw';
-    sparkle.style.top = Math.random() * 100 + 'vh';
-    sparkle.style.animationDelay = Math.random() * 2 + 's';
-    container.appendChild(sparkle);
-    
-    // Animación
-    setTimeout(() => {
-      sparkle.style.opacity = '1';
-      sparkle.style.transform = 'translate(' + (Math.random() * 100 - 50) + 'px, ' + (Math.random() * 100 - 50) + 'px)';
-      setTimeout(() => {
-        sparkle.style.opacity = '0';
-        setTimeout(() => {
-          sparkle.remove();
-        }, 1000);
-      }, 1000);
-    }, 100);
-  }
-}
-
-function showPremiumNotification() {
-  const notification = document.getElementById('premiumNotification');
-  notification.classList.add('show');
-  createSparkles();
   
-  // Efecto de sonido simulado (podrías agregar un sonido real aquí)
-  try {
-    // Simular vibración en dispositivos móviles
-    if (navigator.vibrate) {
-      navigator.vibrate([200, 100, 200, 100, 200]);
-    }
-  } catch (e) {}
-  
-  setTimeout(() => {
-    notification.classList.remove('show');
-  }, 3000);
+  // Actualizar trails de luz
+  updateLightTrails(rot);
 }
 
 /* ---- PROBABILIDAD ---- */
@@ -530,28 +859,21 @@ function spinToPrize(prize){
   const idx = premios.indexOf(prize);
   if(idx < 0) return;
 
-  // queremos que el centro del sector idx quede alineado con la flecha superior (ángulo -PI/2)
-  // fórmula: centerAngle = idx*anglePer + anglePer/2 + rotation_current
-  // queremos centerAngle === -PI/2  => rotation_target = -PI/2 - (idx*anglePer + anglePer/2)
   const rotationTargetBase = -Math.PI/2 - (idx*anglePer + anglePer/2);
 
-  // normalizar current rotation a rango [-PI, PI] para evitar saltos enormes
   function norm(a){ while(a > Math.PI) a -= 2*Math.PI; while(a < -Math.PI) a += 2*Math.PI; return a; }
   const current = norm(rotation);
 
-  // calcular objetivo cercano añadiendo vueltas completas para que gire hacia adelante (positive direction)
-  // elegimos varias vueltas (p.ej. 5-7) y luego sumamos rotationTargetBase
-  const vueltas = 5 + Math.floor(Math.random()*3); // 5..7
+  const vueltas = 5 + Math.floor(Math.random()*3);
   let target = rotationTargetBase + vueltas * 2 * Math.PI;
 
-  // si target está muy lejano del current, ajustar para animar en la dirección más natural
-  // normalizamos target cercano a current + [0, 2PI*vueltas+small]
-  // ya está con vueltas positivas, pero alineamos para que la animación no salte negativamente
-  // aseguramos target > current
   while(target <= current) target += 2*Math.PI;
 
-  const duration = 2200 + Math.random()*600; // ms
+  const duration = 2200 + Math.random()*600;
 
+  // Iniciar vibración de giro
+  startSpinVibration();
+  
   animateRotation(current, target, duration, prize);
 }
 
@@ -562,7 +884,6 @@ function animateRotation(from, to, duration, prize){
   function frame(t){
     const elapsed = t - start;
     const p = Math.min(1, elapsed / duration);
-    // easing (cubic out)
     const eased = 1 - Math.pow(1 - p, 3);
     rotation = from + (to - from) * eased;
     drawWheel(rotation);
@@ -570,13 +891,16 @@ function animateRotation(from, to, duration, prize){
       requestAnimationFrame(frame);
     } else {
       spinning = false;
-      // mostrar resultado textual
       document.getElementById('resultado').innerText = "Resultado: " + prize;
-      // Efecto especial si es el premio mayor
+      
+      // Detener vibración y aplicar efecto final
+      stopSpinVibration(prize);
+      
       if(prize === "Corte gratis") {
         document.getElementById('resultado').style.textShadow = "0 0 10px #ffd700";
         document.getElementById('resultado').style.color = "#ffd700";
         document.getElementById('resultado').style.fontSize = "22px";
+        createGoldenExplosion();
         showPremiumNotification();
       } else {
         document.getElementById('resultado').style.textShadow = "0 0 5px rgba(255,255,255,0.5)";
@@ -584,10 +908,9 @@ function animateRotation(from, to, duration, prize){
         document.getElementById('resultado').style.fontSize = "20px";
       }
       
-      // si "Otro giro" => volver a girar automáticamente
       if(prize === "Otro giro"){
         setTimeout(() => {
-          startSpin(); // nuevo spin
+          startSpin();
         }, 900);
       }
     }
@@ -595,25 +918,49 @@ function animateRotation(from, to, duration, prize){
   requestAnimationFrame(frame);
 }
 
-/* ---- START SPIN (elige por probabilidad y anima) ---- */
+/* ---- NOTIFICACIÓN PREMIUM ---- */
+function showPremiumNotification() {
+  const notification = document.getElementById('premiumNotification');
+  notification.classList.add('show');
+  
+  setTimeout(() => {
+    notification.classList.remove('show');
+  }, 3000);
+}
+
+/* ---- INICIAR GIRO ---- */
 function startSpin(){
   if(spinning) return;
+  
+  // Actualizar posición del logo antes de empezar
+  updateLogoPosition();
+  
+  // Efecto de carga de energía
+  startEnergyCharge();
+  
+  // Iniciar efectos de humo y chispas
+  createSmokeAndSparks();
+  
   const prize = pickByProb();
-  // si quieres, puedes mostrar "girando..." mientras anima
   document.getElementById('resultado').innerText = "Girando...";
   document.getElementById('resultado').style.textShadow = "0 0 5px rgba(255,255,255,0.5)";
   document.getElementById('resultado').style.fontSize = "20px";
-  spinToPrize(prize);
+  
+  // Pequeño delay para que se aprecie la carga de energía
+  setTimeout(() => {
+    spinToPrize(prize);
+  }, 1500);
 }
 
-/* ---- Hook botón ---- */
-document.getElementById('girarBtn').addEventListener('click', () => {
-  startSpin();
-});
-
-/* Render inicial */
+/* ---- INICIALIZACIÓN ---- */
+document.getElementById('girarBtn').addEventListener('click', startSpin);
 resizeCanvas();
 drawWheel(rotation);
+
+// Actualizar posición del logo después de la carga
+setTimeout(() => {
+  updateLogoPosition();
+}, 100);
 </script>
 </body>
 </html>
